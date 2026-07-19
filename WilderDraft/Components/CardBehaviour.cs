@@ -1,16 +1,17 @@
 using System;
 using System.Collections;
-using BepInEx.Logging;
+using System.Diagnostics.CodeAnalysis;
 using Il2CppInterop.Runtime.InteropTypes.Fields;
 using MiraAPI.Modifiers;
 using MiraAPI.Modifiers.Types;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 namespace WilderDraft.Components;
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
 {
     public Canvas canvas;
@@ -19,7 +20,7 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
     private Vector2 originalPosition;
     private Transform originalParent;
     private Vector2 lastMousePosition;
-    public System.Action OnDropAccepted;
+    public Action OnDropAccepted;
     public Il2CppReferenceField<Image> coloredPart;
     public Il2CppReferenceField<Image> icon;
     public Il2CppReferenceField<TextMeshProUGUI> fallBackText;
@@ -31,21 +32,21 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
         if (canvas == null)
             canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
-            canvas = UnityEngine.Object.FindObjectOfType<Canvas>();
+            canvas = FindObjectOfType<Canvas>();
 
         // Wire up drag events through EventTrigger instead of interfaces
         var trigger = gameObject.AddComponent<EventTrigger>();
 
         var beginDrag = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
-        beginDrag.callback.AddListener((System.Action<BaseEventData>)((e) => OnBeginDrag(e.Cast<PointerEventData>())));
+        beginDrag.callback.AddListener((Action<BaseEventData>)((e) => OnBeginDrag(e.Cast<PointerEventData>())));
         trigger.triggers.Add(beginDrag);
 
         var drag = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
-        drag.callback.AddListener((System.Action<BaseEventData>)((e) => OnDrag(e.Cast<PointerEventData>())));
+        drag.callback.AddListener((Action<BaseEventData>)((e) => OnDrag(e.Cast<PointerEventData>())));
         trigger.triggers.Add(drag);
 
         var endDrag = new EventTrigger.Entry { eventID = EventTriggerType.EndDrag };
-        endDrag.callback.AddListener((System.Action<BaseEventData>)((e) => OnEndDrag(e.Cast<PointerEventData>())));
+        endDrag.callback.AddListener((Action<BaseEventData>)((e) => OnEndDrag(e.Cast<PointerEventData>())));
         trigger.triggers.Add(endDrag);
     }
 
@@ -98,11 +99,11 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
         }
         icon.Value.preserveAspect = true;
         coloredPart.Value.color = r.NameColor == Color.white ? r.TeamColor : r.NameColor;
-        OnDropAccepted += new Action(() =>
+        OnDropAccepted += () =>
         {
             PlayerControl.LocalPlayer.RpcSetRole(r.Role, true);
             gameObject.Destroy();
-        });
+        };
     }
 
     public void InitializeForModifier(GameModifier m)
@@ -114,7 +115,7 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
             // ReSharper disable once PossibleNullReferenceException
             icon.Value.sprite = m.ModifierIcon.LoadAsset();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             fallBackText.Value.enabled = true;
             fallBackText.Value.text = m.ModifierName;
@@ -122,11 +123,11 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
         }
         icon.Value.preserveAspect = true;
         coloredPart.Value.color = m.FreeplayFileColor;
-        OnDropAccepted += new Action(() =>
+        OnDropAccepted += () =>
         {
             PlayerControl.LocalPlayer.RpcAddModifier(m.TypeId);
             gameObject.Destroy();
-        });
+        };
     }
 
     public IEnumerator CoAnimate(float delay, bool flipX)
@@ -138,11 +139,11 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
         float duration = 0.7f;
         
         Vector3 temp = transform.localEulerAngles;
-        for (float time = 0.0f; (double) time < (double) duration; time += Time.deltaTime)
+        for (float time = 0.0f; time < (double) duration; time += Time.deltaTime)
         {
             temp = Vector3.Lerp(source, dest, time / duration);
             transform.localEulerAngles = temp;
-            yield return (object) null;
+            yield return null;
         }
         temp = dest;
         transform.localEulerAngles = temp;

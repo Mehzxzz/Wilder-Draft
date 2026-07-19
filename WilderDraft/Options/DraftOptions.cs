@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MiraAPI.GameOptions;
 using MiraAPI.GameOptions.OptionTypes;
 using MiraAPI.Utilities;
@@ -5,6 +6,7 @@ using UnityEngine;
 
 namespace WilderDraft.Options;
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class DraftOptions : AbstractOptionGroup
 {
     public override string GroupName => "Draft Mode";
@@ -18,7 +20,11 @@ public class DraftOptions : AbstractOptionGroup
     };
 
     public ModdedToggleOption isModifierDraftEnabled { get; } = new ModdedToggleOption("Modifier Drafting", true);
-    public ModdedNumberOption modifierQuota { get; } = new ModdedNumberOption("Max Modifier Drafting Quota", 3, 2, 6, 1 ,MiraNumberSuffixes.None, "0 Cards")
+    public ModdedNumberOption minModQuota { get; } = new ModdedNumberOption("Min Modifier Drafting Quota", 0, 0, 6, 1 ,MiraNumberSuffixes.None, "0 Cards")
+    {
+        Visible = () => OptionGroupSingleton<DraftOptions>.Instance.isModifierDraftEnabled.Value
+    };
+    public ModdedNumberOption maxModQuota { get; } = new ModdedNumberOption("Max Modifier Drafting Quota", 3, 1, 6, 1 ,MiraNumberSuffixes.None, "0 Cards")
     {
         Visible = () => OptionGroupSingleton<DraftOptions>.Instance.isModifierDraftEnabled.Value
     };

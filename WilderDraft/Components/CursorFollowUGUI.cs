@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Reactor.Utilities.Attributes;
 using UnityEngine;
 
 namespace WilderDraft.Components;
 
 [RegisterInIl2Cpp]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class CursorFollowUGUI : MonoBehaviour
 {
     private Canvas canvas;

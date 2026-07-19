@@ -1,25 +1,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Il2CppInterop.Runtime.InteropTypes.Fields;
-using Il2CppSystem.Text;
 using MiraAPI.GameOptions;
 using MiraAPI.Modifiers;
 using MiraAPI.Modifiers.Types;
-using MiraAPI.Patches;
 using MiraAPI.Utilities;
 using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using WilderDraft.Options;
 using WilderDraft.Utilities;
 
 namespace WilderDraft.Components;
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "ReturnValueOfPureMethodIsNotUsed")]
 public class CardDeck(IntPtr ptr) : MonoBehaviour(ptr)
 {
     public Il2CppReferenceField<TextMeshProUGUI> titleText;
@@ -38,7 +37,7 @@ public class CardDeck(IntPtr ptr) : MonoBehaviour(ptr)
         titleText.Value.text = "Pick A Role!";
         var canvas = GetComponent<Canvas>();
         releaseZone = Instantiate(cardReleaseZonePrefab.Value, canvas.transform);
-        releaseZone.highlightImage.Value.sprite = WilderDraft.Assets.Silhouette.LoadAsset();
+        releaseZone.highlightImage.Value.sprite = Assets.Silhouette.LoadAsset();
         releaseZone.highlightImage.Value.preserveAspect = true;
         releaseZone.transform.localPosition = Vector3.zero + new Vector3(0, 100);
         releaseZone.gameObject.AddComponent<CursorFollowUGUI>();
@@ -59,12 +58,12 @@ public class CardDeck(IntPtr ptr) : MonoBehaviour(ptr)
         {
             var card = Instantiate(cardPrefab.Value, cardsParent.Value.transform);
             var r = rolePool.Random();
-            card.OnDropAccepted = new Action(() =>
+            card.OnDropAccepted = () =>
             {
                 Uses--;
                 if (Uses > 0) return;
                 Coroutines.Start(CoClose());
-            });
+            };
             rolePool.RemoveAll(x => x.Role == r.Role);
             card.InitializeForRole(r);
             Coroutines.Start(card.CoAnimate(i / 5f, false));
@@ -98,22 +97,42 @@ public class CardDeck(IntPtr ptr) : MonoBehaviour(ptr)
         }
         var canvas = GetComponent<Canvas>();
         releaseZone = Instantiate(cardReleaseZonePrefab.Value, canvas.transform);
-        releaseZone.highlightImage.Value.sprite = WilderDraft.Assets.Silhouette.LoadAsset();
+        releaseZone.highlightImage.Value.sprite = Assets.Silhouette.LoadAsset();
         releaseZone.highlightImage.Value.preserveAspect = true;
         releaseZone.transform.localPosition = Vector3.zero + new Vector3(0, 100);
         releaseZone.gameObject.AddComponent<CursorFollowUGUI>();
         
         List<GameModifier> possibleModifiers = new();
+        Logger<WilderDraftPlugin>.Error($"Total modifiers: {ModifierManager.Modifiers.Count} | Current role: {PlayerControl.LocalPlayer.Data.Role?.NiceName ?? "idk this missing some reason lol"}");
         foreach (var baseModifier in ModifierManager.Modifiers)
         {
-            if (baseModifier is not GameModifier gameModifier) continue;
-            if (gameModifier.CanSpawnOnCurrentMode() && gameModifier.IsModifierValidOn(PlayerControl.LocalPlayer.Data.Role) && gameModifier.GetAmountPerGame() > 0 && Helpers.CheckChance(gameModifier.GetAssignmentChance())) possibleModifiers.Add(gameModifier);
+            if (baseModifier is not GameModifier gameModifier)
+            {
+                Logger<WilderDraftPlugin>.Error($"Skipped non GameModifier: {baseModifier.GetType().Name}");
+                continue;
+            }
+
+            bool canSpawn = gameModifier.CanSpawnOnCurrentMode();
+            bool validOnRole = gameModifier.IsModifierValidOn(PlayerControl.LocalPlayer.Data.Role);
+            int amountPerGame = gameModifier.GetAmountPerGame();
+            int assignChance = gameModifier.GetAssignmentChance();
+            bool wonChance = Helpers.CheckChance(assignChance);
+            bool included = canSpawn && validOnRole && amountPerGame > 0 && wonChance;
+
+            Logger<WilderDraftPlugin>.Error(
+                $"Modifier: {gameModifier.ModifierName} | Can Spawn: {canSpawn} | Valid On Role: {validOnRole} | Amount Per Game: {amountPerGame} | Assignment Chance: {assignChance}");
+
+            if (included) possibleModifiers.Add(gameModifier);
         }
+        Logger<WilderDraftPlugin>.Error($"Total modifiers: {possibleModifiers.Count}");
 
         var draftOptions = OptionGroupSingleton<DraftOptions>.Instance;
-        int toBeAssignedCount = UnityEngine.Random.RandomRangeInt(0, (int)draftOptions.modifierQuota.Value + 1);
+        int toBeAssignedCount = UnityEngine.Random.RandomRangeInt((int)draftOptions.minModQuota.Value, (int)draftOptions.maxModQuota.Value + 1);
+        Logger<WilderDraftPlugin>.Instance.LogError($"Modifiers to be assigned: {toBeAssignedCount} | min {draftOptions.minModQuota.Value}/max {draftOptions.maxModQuota.Value})");
         if (toBeAssignedCount == 0 || possibleModifiers.Count < toBeAssignedCount || possibleModifiers.Count == 0)
         {
+            Logger<WilderDraftPlugin>.Instance.LogError(
+                $"Modifiers to be assigned: {toBeAssignedCount} | Possible modifiers: {possibleModifiers.Count}");
             gameObject.DestroyImmediate();
             return;
         }
@@ -129,13 +148,13 @@ public class CardDeck(IntPtr ptr) : MonoBehaviour(ptr)
             Coroutines.Start(card.CoAnimate(i / 5f, true));
             var m = possibleModifiers.Random();
             possibleModifiers.Remove(m);
-            card.OnDropAccepted = new Action(() =>
+            card.OnDropAccepted = () =>
             {
                 Uses--;
                 titleText.Value.text = $"Pick {Uses} More Modifier" + (Uses == 1 ? "" : "s") + "!";
                 if (Uses > 0) return;
                 Coroutines.Start(CoClose());
-            });
+            };
             card.InitializeForModifier(m);
             cards.Add(card);
             var hover = card.gameObject.AddComponent<HoverBehaviour>();
@@ -152,16 +171,26 @@ public class CardDeck(IntPtr ptr) : MonoBehaviour(ptr)
         }
     }
 
+    private bool _timeUp;
+
     private void Update()
     {
         timeLeft -= Time.deltaTime;
         timerText.Value.text = ((int)timeLeft) + "s";
-        if (timeLeft <= 0)
+        if (timeLeft <= 0 && !_timeUp)
         {
+            _timeUp = true;
             cardsParent.Value.gameObject.SetActive(false);
-            cards.Random().OnDropAccepted.Invoke();
             timerText.Value.text = "TIME'S UP!";
             timerText.Value.color = Color.red;
+
+            var remainingPool = new List<CardBehaviour>(cards);
+            while (Uses > 0 && remainingPool.Count > 0)
+            {
+                var pick = remainingPool.Random();
+                remainingPool.Remove(pick);
+                pick.OnDropAccepted.Invoke();
+            }
         }
         if (timeLeft <= -3)
         {

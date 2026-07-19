@@ -1,11 +1,9 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using MiraAPI.GameOptions;
 using MiraAPI.Modifiers;
-using MiraAPI.Roles;
 using MiraAPI.Utilities;
 using PowerTools;
 using Reactor.Utilities;
@@ -71,7 +69,7 @@ public static class IntroCutscenePatches
             fullScreen.gameObject.SetActive(true);
             fullScreen.color = Color.black;
             introCutscene.StartCoroutine(Effects.ActionAfterDelay(0.05f,
-                new System.Action(() => introCutscene.BackgroundBar.material.color = teamColor)));
+                new Action(() => introCutscene.BackgroundBar.material.color = teamColor)));
             yield return introCutscene.ShowTeam(show, 3);
             introCutscene.BackgroundBar.material.SetColor(ShaderID.Color, teamColor);
             var audioSource = new GameObject().AddComponent<AudioSource>();
@@ -111,6 +109,8 @@ public static class IntroCutscenePatches
                         modifierComponent.RemoveModifier(mod);
                     }
                 }
+
+                yield return new WaitForFixedUpdate();
                 Coroutines.Start(DraftEffects.CoFadeColor(meshRenderer.material, Color.black,
                     RoleHelpers.GetRoleColor(PlayerControl.LocalPlayer.Data.Role).DarkenColor(0.7f), 0.4f));
                 meshRenderer.transform.localScale = new Vector3(meshRenderer.transform.localScale.x, meshRenderer.transform.localScale.y * 2f, 1f);

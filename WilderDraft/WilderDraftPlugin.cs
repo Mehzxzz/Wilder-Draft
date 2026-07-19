@@ -1,9 +1,9 @@
-﻿using BepInEx;
+﻿using System.Diagnostics.CodeAnalysis;
+using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using Il2CppInterop.Runtime.Injection;
-using MiraAPI.Modifiers;
 using MiraAPI.PluginLoading;
 using Reactor;
 using Reactor.Utilities;
@@ -12,10 +12,11 @@ using WilderDraft.Components;
 
 namespace WilderDraft;
 
-[BepInAutoPlugin("com.missingpixel.wilderdraft",  "Wilder Draft Plugin", "1.0.0")]
+[BepInAutoPlugin("com.missingpixel.wilderdraft",  "Wilder Draft", "1.0.0")]
 [BepInProcess("Among Us.exe")]
 [BepInDependency(ReactorPlugin.Id)]
 [BepInDependency(MiraAPI.MiraApiPlugin.Id)]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public partial class WilderDraftPlugin : BasePlugin, IMiraPlugin
 {
     public Harmony Harmony { get; } = new(Id);

@@ -1,11 +1,15 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Il2CppInterop.Runtime.InteropTypes.Fields;
 using UnityEngine;
 using UnityEngine.EventSystems;
+
 namespace WilderDraft.Components;
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 public class CardReleaseZone(IntPtr ptr) : MonoBehaviour(ptr)
 {
-    public System.Action<CardBehaviour> onItemDropped;
+    public Action<CardBehaviour> onItemDropped;
 
     public Il2CppReferenceField<UnityEngine.UI.Image> highlightImage;
     public Color normalColor = PlayerControl.LocalPlayer.Data.Color;
