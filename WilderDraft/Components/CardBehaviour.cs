@@ -7,7 +7,7 @@ using MiraAPI.Modifiers.Types;
 using Reactor.Utilities.Extensions;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
+using WilderDraft;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 namespace WilderDraft.Components;
@@ -100,7 +100,7 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
         coloredPart.Value.color = r.NameColor == Color.white ? r.TeamColor : r.NameColor;
         OnDropAccepted += new Action(() =>
         {
-            PlayerControl.LocalPlayer.RpcSetRole(r.Role, true);
+            PlayerControl.LocalPlayer.RpcCustomSetRole((uint) r.Role);
             gameObject.Destroy();
         });
     }
