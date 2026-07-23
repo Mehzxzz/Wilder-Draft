@@ -101,7 +101,7 @@ public class CardBehaviour(IntPtr ptr) : MonoBehaviour(ptr)
         coloredPart.Value.color = r.NameColor == Color.white ? r.TeamColor : r.NameColor;
         OnDropAccepted += () =>
         {
-            PlayerControl.LocalPlayer.RpcSetRole(r.Role, true);
+            PlayerControl.LocalPlayer.RpcCustomSetRole((uint) r.Role);
             gameObject.Destroy();
         };
     }

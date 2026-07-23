@@ -12,7 +12,7 @@ using WilderDraft.Components;
 
 namespace WilderDraft;
 
-[BepInAutoPlugin("com.missingpixel.wilderdraft",  "Wilder Draft", "1.0.0")]
+[BepInAutoPlugin("com.missingpixel.wilderdraft",  "Wilder Draft", "1.0.1")]
 [BepInProcess("Among Us.exe")]
 [BepInDependency(ReactorPlugin.Id)]
 [BepInDependency(MiraAPI.MiraApiPlugin.Id)]
